@@ -34,50 +34,73 @@ class ButtonGrid(GridLayout):
                 self.buttons[i][j] = button  # Add button to the 2D list
 
     def alpha_beta_pruning(self, is_maximizing_player, depth):
-        global buttonJ, buttonI
-        VAL, best_move = self.max_alpha_beta(float("-inf"), float("inf"), depth)
+        global buttonI, buttonJ
+        VAL, best_move = self.max_alpha_beta(float("-inf"), float("inf"), depth, is_maximizing_player)
         return best_move
 
-    def max_alpha_beta(self, alpha, beta, depth):
+    def max_alpha_beta(self, alpha, beta, depth, is_maximizing_player):
         if depth == 0 or self.check_winner():
             return self.evaluate(), None
 
         max_eval = float("-inf")
         best_move = None
+        available_moves = []
+
         for i in range(3):
             for j in range(3):
                 if self.buttons[i][j].text == "":
-                    self.buttons[i][j].text = "O"  # Make a hypothetical move
-                    eval, VAL = self.min_alpha_beta(alpha, beta, depth - 1)  # Evaluate the move
-                    self.buttons[i][j].text = ""  # Undo the hypothetical move
-                    if eval > max_eval:
-                        max_eval = eval
-                        best_move = (i, j)
-                    alpha = max(alpha, eval)
-                    if beta <= alpha:
-                        break
+                    available_moves.append((i, j))
+
+        if not available_moves:
+            return 0, None
+
+        for move in available_moves:
+            i, j = move
+            self.buttons[i][j].text = "O" if is_maximizing_player else "X"  # Make a hypothetical move
+            eval, _ = self.min_alpha_beta(alpha, beta, depth - 1, not is_maximizing_player)  # Evaluate the move
+            self.buttons[i][j].text = ""  # Undo the hypothetical move
+
+            if eval > max_eval:
+                max_eval = eval
+                best_move = (i, j)
+
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
+
         return max_eval, best_move
 
-    def min_alpha_beta(self, alpha, beta, depth):
+    def min_alpha_beta(self, alpha, beta, depth, is_maximizing_player):
         if depth == 0 or self.check_winner():
             return self.evaluate(), None
 
         min_eval = float("inf")
         best_move = None
+        available_moves = []
+
         for i in range(3):
             for j in range(3):
                 if self.buttons[i][j].text == "":
-                    self.buttons[i][j].text = "X"  # Make a hypothetical move
-                    eval, VAL = self.max_alpha_beta(alpha, beta, depth - 1)  # Evaluate the move
-                    self.buttons[i][j].text = ""  # Undo the hypothetical move
-                    if eval < min_eval:
-                        min_eval = eval
-                        best_move = (i, j)
-                    beta = min(beta, eval)
-                    if beta <= alpha:
-                        break
-        return min_eval, best_move
+                    available_moves.append((i, j))
 
+        if not available_moves:
+            return 0, None
+
+        for move in available_moves:
+            i, j = move
+            self.buttons[i][j].text = "O" if is_maximizing_player else "X"  # Make a hypothetical move
+            eval, _ = self.max_alpha_beta(alpha, beta, depth - 1, not is_maximizing_player)  # Evaluate the move
+            self.buttons[i][j].text = ""  # Undo the hypothetical move
+
+            if eval < min_eval:
+                min_eval = eval
+                best_move = (i, j)
+
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
+
+        return min_eval, best_move
 
     def PlayVsComputer(self):
         global Check
