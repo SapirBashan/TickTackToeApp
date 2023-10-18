@@ -94,9 +94,9 @@ class ButtonGrid(GridLayout):
         #     buttonI, buttonJ = arr[randint(0, len(arr) - 1)]
 
         if VsComputer[1] != False:
-            best_moveI,best_moveJ = self.alpha_beta_pruning(True)
+            best_moveI,best_moveJ = self.alpha_beta_pruning(True,0)
         else:
-            best_moveI,best_moveJ = self.alpha_beta_pruning(False)
+            best_moveI,best_moveJ = self.alpha_beta_pruning(False,0)
 
         buttonI = best_moveI
         buttonJ = best_moveJ
