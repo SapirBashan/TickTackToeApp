@@ -1,5 +1,7 @@
 import time
 from random import randint
+from typing import Union, List, Any, Tuple
+
 from kivy.clock import Clock
 
 import kivy
@@ -35,12 +37,12 @@ class ButtonGrid(GridLayout):
 
     def alpha_beta_pruning(self, is_maximizing_player, depth):
         global buttonI, buttonJ
-        VAL, best_move = self.max_alpha_beta(float("-inf"), float("inf"), depth, is_maximizing_player)
+        best_move = self.max_alpha_beta(float("-inf"), float("inf"), depth, is_maximizing_player)
         return best_move
 
-    def max_alpha_beta(self, alpha, beta, depth, is_maximizing_player):
+    def max_alpha_beta(self, alpha: int, beta: int, depth: int, is_maximizing_player: bool):
         if depth == 0 or self.check_winner():
-            return self.evaluate(), None
+            return [self.evaluate(),self]
 
         max_eval = float("-inf")
         best_move = None
@@ -52,12 +54,12 @@ class ButtonGrid(GridLayout):
                     available_moves.append((i, j))
 
         if not available_moves:
-            return 0, None
+            return 0
 
         for move in available_moves:
             i, j = move
             self.buttons[i][j].text = "O" if is_maximizing_player else "X"  # Make a hypothetical move
-            eval, _ = self.min_alpha_beta(alpha, beta, depth - 1, not is_maximizing_player)  # Evaluate the move
+            eval,_ = self.min_alpha_beta(alpha, beta, depth - 1, not is_maximizing_player)  # Evaluate the move
             self.buttons[i][j].text = ""  # Undo the hypothetical move
 
             if eval > max_eval:
@@ -67,12 +69,11 @@ class ButtonGrid(GridLayout):
             alpha = max(alpha, eval)
             if beta <= alpha:
                 break
-
-        return max_eval, best_move
+        return [max_eval, best_move]
 
     def min_alpha_beta(self, alpha, beta, depth, is_maximizing_player):
         if depth == 0 or self.check_winner():
-            return self.evaluate(), None
+            return [self.evaluate(),self]
 
         min_eval = float("inf")
         best_move = None
@@ -83,13 +84,10 @@ class ButtonGrid(GridLayout):
                 if self.buttons[i][j].text == "":
                     available_moves.append((i, j))
 
-        if not available_moves:
-            return 0, None
-
         for move in available_moves:
             i, j = move
             self.buttons[i][j].text = "O" if is_maximizing_player else "X"  # Make a hypothetical move
-            eval, _ = self.max_alpha_beta(alpha, beta, depth - 1, not is_maximizing_player)  # Evaluate the move
+            eval,_ = self.max_alpha_beta(alpha, beta, depth - 1, not is_maximizing_player)  # Evaluate the move
             self.buttons[i][j].text = ""  # Undo the hypothetical move
 
             if eval < min_eval:
@@ -100,29 +98,28 @@ class ButtonGrid(GridLayout):
             if beta <= alpha:
                 break
 
-        return min_eval, best_move
+        return [min_eval, best_move]
 
     def PlayVsComputer(self):
         global Check
-        # Create a list of tuples representing unclicked buttons
+        # # Create a list of tuples representing unclicked buttons
         # arr = []
-        # for i in range(0):
-        #     for j in range(0):
+        # for i in range(3):
+        #     for j in range(3):
         #         if self.buttons[i][j].text == "":
         #             arr.append((i, j))
-
-        # Check if there are any available moves
+        #
+        # # Check if there are any available moves
         # if arr:
         #     # Pick a random button from the available moves
         #     buttonI, buttonJ = arr[randint(0, len(arr) - 1)]
 
         if VsComputer[1] != False:
-            best_moveI,best_moveJ = self.alpha_beta_pruning(True,0)
+            eval, best_move = self.alpha_beta_pruning(True, 4)
         else:
-            best_moveI,best_moveJ = self.alpha_beta_pruning(False,0)
+            eval, best_move = self.alpha_beta_pruning(False, 4)
 
-        buttonI = best_moveI
-        buttonJ = best_moveJ
+        buttonI, buttonJ = best_move
 
         if VsComputer[1] != False:
             self.buttons[buttonI][buttonJ].text = "O"
@@ -136,7 +133,9 @@ class ButtonGrid(GridLayout):
             self.buttons[buttonI][buttonJ].color = (1, 0, 0, 1)  # Set text color to red (RGBA format)
             self.buttons[buttonI][buttonJ].disabled = True
             Check = True
+
         self.check_winner()
+
 
     def on_button_press(self, instance):
         global Check  # Declare Check as a global variable
@@ -147,6 +146,10 @@ class ButtonGrid(GridLayout):
                 instance.color = (1, 0, 0, 1)  # Set text color to red (RGBA format)
                 instance.disabled = True
                 Check = True
+                gameOver = self.check_winner()
+                # Schedule a callback after 1 second to execute the computer's move
+                if not gameOver:
+                    Clock.schedule_once(self.play_computer_move, 0.5)
         else:
             if (VsComputer[0] == True) and (VsComputer[1] == False):
                 instance.text = "O"
@@ -154,13 +157,14 @@ class ButtonGrid(GridLayout):
                 instance.color = (0, 0, 1, 1)  # Set text color to blue (RGBA format)
                 instance.disabled = True
                 Check = False
-        gameOver = self.check_winner()
-        # Schedule a callback after 1 second to execute the computer's move
-        if not gameOver:
-            Clock.schedule_once(self.play_computer_move, 0.5)
+                gameOver = self.check_winner()
+                # Schedule a callback after 1 second to execute the computer's move
+                if not gameOver:
+                    Clock.schedule_once(self.play_computer_move, 0.5)
 
     def play_computer_move(self, dt):
         self.PlayVsComputer()
+
 
     def evaluate(self):
         winner = self.check_winner()
@@ -193,19 +197,19 @@ class ButtonGrid(GridLayout):
                 self.show_popup(Winner="Player O WON")
                 return True, "Player O WON"
 
-        # Check diagonals for "X" or "O" wins
-        if self.buttons[0][0].text == self.buttons[1][1].text == self.buttons[2][2].text == "X":
-            self.show_popup(Winner="Player X WON")
-            return True, "Player X WON"
-        if self.buttons[0][0].text == self.buttons[1][1].text == self.buttons[2][2].text == "O":
-            self.show_popup(Winner="Player O WON")
-            return True, "Player O WON"
-        if self.buttons[0][2].text == self.buttons[1][1].text == self.buttons[2][0].text == "X":
-            self.show_popup(Winner="Player X WON")
-            return True, "Player X WON"
-        if self.buttons[0][2].text == self.buttons[1][1].text == self.buttons[2][0].text == "O":
-            self.show_popup(Winner="Player O WON")
-            return True, "Player O WON"
+            # Check diagonals for "X" or "O" wins
+            if self.buttons[0][0].text == self.buttons[1][1].text == self.buttons[2][2].text == "X":
+                self.show_popup(Winner="Player X WON")
+                return True, "Player X WON"
+            if self.buttons[0][0].text == self.buttons[1][1].text == self.buttons[2][2].text == "O":
+                self.show_popup(Winner="Player O WON")
+                return True, "Player O WON"
+            if self.buttons[0][2].text == self.buttons[1][1].text == self.buttons[2][0].text == "X":
+                self.show_popup(Winner="Player X WON")
+                return True, "Player X WON"
+            if self.buttons[0][2].text == self.buttons[1][1].text == self.buttons[2][0].text == "O":
+                self.show_popup(Winner="Player O WON")
+                return True, "Player O WON"
 
         Count = 0
         for i in range(3):
@@ -215,10 +219,7 @@ class ButtonGrid(GridLayout):
         if Count == 9:
             self.show_popup(Winner="It's a Tie")
             return True, "It's a Tie"
-
-        return None
-
-
+        Clock.schedule_once(self.play_computer_move, 0.5)
 
     def show_popup(self, Winner):
         show1 = Button(text='Restart Game')
